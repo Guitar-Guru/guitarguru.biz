@@ -1,0 +1,31 @@
+plugins:
+  - jasmine
+env:
+  browser: true
+  es6: true
+  jquery: true
+  jasmine: true
+parserOptions:
+  sourceType: script
+rules:
+  indent:
+    - error
+    - 2
+  linebreak-style:
+    - error
+    - unix
+  quotes:
+    - error
+    - single
+  semi:
+    - error
+    - always
+  no-console:
+    - 0
+  no-unused-vars:
+    - error
+  no-undef:
+    - error
+  func-call-spacing:
+    - error
+    - never
