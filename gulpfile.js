@@ -1,19 +1,22 @@
 /* global require process */
 const gulp = require('gulp');
 const browserSync = require('browser-sync').create();
-const vulcanize = require('gulp-vulcanize');
 const htmlmin = require('gulp-htmlmin');
 const client = require('firebase-tools');
 const firebaseRewrites = require('browser-sync-middleware-firebase-rewrites');
 const mocha = require('gulp-mocha');
 const util = require('gulp-util');
+const sourcemaps = require('gulp-sourcemaps');
+const autoprefixer = require('gulp-autoprefixer');
+const cleanCSS = require('gulp-clean-css');
+const uglify = require('gulp-uglify');
 
 const jsSources = ['app/scripts/*.js'];
 const htmlSources = ['app/**/*.html'];
-const cssSources = ['app/styles/*.css'];
+const cssSources = ['app/css/*.css'];
 const tests = ['test/**/*.js'];
 const appDir = './app/';
-const outputDir = 'dist';
+const outputDir = './dist/';
 const files = jsSources.concat(htmlSources, cssSources, tests);
 
 gulp.task('default', ['test']);
@@ -24,18 +27,18 @@ gulp.task('test', function () {
       reporter: 'spec',
       ui: 'bdd'
     }))
-        .on('error', util.log);
+    .on('error', util.log);
 });
 
 gulp.task('watch-test', function () {
   gulp.watch(files, ['test']);
 });
 
-gulp.task('build', ['vulcanize']);
+gulp.task('build', ['html', 'css', 'js']);
 
 gulp.task('deploy', function () {
   client.deploy({
-    project: 'js-damage-calc',
+    project: 'smiller-guitar-guru',
     token: process.env.FIREBASE_TOKEN,
     cwd: appDir
   }).then(function () {
@@ -49,15 +52,19 @@ gulp.task('deploy', function () {
   });
 });
 
-gulp.task('serve', ['browser-sync'], function () {
+gulp.task('serve', ['prefix','browser-sync'], function () {
   gulp.watch(htmlSources).on('change', browserSync.reload);
+  gulp.watch(cssSources, ['prefix']);
   gulp.watch(jsSources).on('change', browserSync.reload);
 });
 
 gulp.task('browser-sync', function () {
   browserSync.init(files, {
     server: {
-      baseDir: appDir
+      baseDir: appDir,
+      routes: {
+        '/styles': 'app/css/prefixed'
+      }
     },
     middleware: [
       firebaseRewrites({
@@ -68,32 +75,38 @@ gulp.task('browser-sync', function () {
   });
 });
 
-gulp.task('vulcanize', function () {
-  return gulp.src('app/index.html')
-    .pipe(vulcanize({
-      abspath: '',
-      excludes: [],
-      stripExcludes: false,
-      inlineScripts: true,
-      inlineCss: true,
-      stripComments: true
-    }))
+gulp.task('prefix', function () {
+  return gulp.src(cssSources)
+    .pipe(autoprefixer())
+    .pipe(gulp.dest('app/css/prefixed'))
+    .pipe(browserSync.stream());
+});
+
+gulp.task('css', function () {
+  return gulp.src(cssSources)
+    .pipe(sourcemaps.init())
+    .pipe(autoprefixer())
+    .pipe(cleanCSS())
+    .pipe(sourcemaps.write())
+    .pipe(gulp.dest(outputDir + '/styles'));
+});
+
+gulp.task('js', function () {
+  return gulp.src(jsSources)
+    .pipe(sourcemaps.init())
+    .pipe(uglify())
+    .pipe(sourcemaps.write())
+    .pipe(gulp.dest(outputDir + '/scripts'));
+});
+
+gulp.task('html', function () {
+  return gulp.src(htmlSources)
     .pipe(htmlmin({
-      removeEmptyAttributes: true,
-      // customAttrAssign: [{"source":"\\$="}],
-      // customAttrSurround: [
-      //     [ {"source": "\\({\\{"}, {"source": "\\}\\}"} ],
-      //     [ {"source": "\\[\\["}, {"source": "\\]\\]"}  ]
-      // ],
       collapseWhitespace: true,
-      // always leave one space
-      // because http://perfectionkills.com/experimenting-with-html-minifier/#collapse_whitespace
       conservativeCollapse: true,
       minifyJS: true,
       minifyCSS: true,
-      removeComments: true,
-      removeCommentsFromCDATA: true,
-      removeCDATASectionsFromCDATA: true
+      removeComments: true
     }))
     .pipe(gulp.dest(outputDir));
 });

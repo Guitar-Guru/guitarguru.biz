@@ -1,0 +1,27 @@
+body {
+  background-color: #FED290;
+}
+
+.section--center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.mdl-button--colored {
+  background-color: #AA00FF !important;
+  background: #AA00FF !important;
+}
+
+.bg-mdl-primary {
+  background-color: #009688;
+}
+
+.navbar-toggler-left {
+  position: static;
+  margin-right: 1rem;
+}
+
+.navbar {
+  flex-direction: row;
+}
